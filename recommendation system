@@ -1,0 +1,38 @@
+import pandas as pd
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.impute import SimpleImputer
+data = {
+    'User': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
+    'Movie1': [5, 4, np.nan, 2, np.nan],
+    'Movie2': [3, np.nan, 4, 1, np.nan],
+    'Movie3': [4, 2, 5, np.nan, np.nan],
+    'Movie4': [np.nan, 3, 3, 4, 5],
+    'Movie5': [np.nan, np.nan, np.nan, 5, 4]
+}
+
+
+ratings = pd.DataFrame(data)
+ratings.set_index('User', inplace=True)
+ 
+imputer = SimpleImputer(strategy='mean')
+ratings_imputed = pd.DataFrame(imputer.fit_transform(ratings), columns=ratings.columns, index=ratings.index)
+
+similarity_matrix = pd.DataFrame(cosine_similarity(ratings_imputed), index=ratings.index, columns=ratings.index)
+
+def recommend_movies(user, num_recommendations=2):
+    """Recommend movies to a user based on similar users."""
+    
+    user_similarities = similarity_matrix[user]
+    
+    scores = np.dot(user_similarities, ratings_imputed.fillna(0).values)
+    scores = pd.Series(scores, index=ratings.columns)
+
+    rated_movies = ratings.loc[user].dropna().index
+    scores.drop(index=rated_movies, inplace=True)
+
+    return
+scores.sort_values(ascending=False).head(num_recommendations)
+
+print("Recommendations for Alice:")
+print(recommend_movies('Alice'))
